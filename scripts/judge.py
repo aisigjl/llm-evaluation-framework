@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from typing import Any
 
@@ -96,7 +97,8 @@ def judge(args: argparse.Namespace) -> Path:
     pending = [record for record in records if record["id"] not in done]
 
     client = make_openai_client("JUDGE_API_KEY", "JUDGE_BASE_URL")
-    for record in tqdm(pending, desc="judge"):
+
+    def judge_one(record: dict[str, Any]) -> dict[str, Any]:
         raw = ""
         parse_error = None
         result = None
@@ -114,19 +116,24 @@ def judge(args: argparse.Namespace) -> Path:
             result = extract_json_object(raw)
         except Exception as exc:
             parse_error = str(exc)
+        return {
+            **record,
+            "judge_model": judge_model,
+            "judge_result": result,
+            "judge_response_raw": raw,
+            "judge_parse_error": parse_error,
+            "judged_at": utc_now(),
+        }
 
-        append_jsonl(
-            output,
-            {
-                **record,
-                "judge_model": judge_model,
-                "judge_result": result,
-                "judge_response_raw": raw,
-                "judge_parse_error": parse_error,
-                "judged_at": utc_now(),
-            },
-        )
-    print(f"judgements={output} total={len(records)} pending_written={len(pending)}")
+    if args.workers <= 1:
+        for record in tqdm(pending, desc="judge"):
+            append_jsonl(output, judge_one(record))
+    else:
+        with ThreadPoolExecutor(max_workers=args.workers) as executor:
+            futures = [executor.submit(judge_one, record) for record in pending]
+            for future in tqdm(as_completed(futures), total=len(futures), desc=f"judge:{args.workers}w"):
+                append_jsonl(output, future.result())
+    print(f"judgements={output} total={len(records)} pending_written={len(pending)} workers={args.workers}")
     return output
 
 
@@ -138,6 +145,7 @@ def main() -> None:
     parser.add_argument("--judge-model")
     parser.add_argument("--limit", type=int)
     parser.add_argument("--max-tokens", type=int, default=1024)
+    parser.add_argument("--workers", type=int, default=1)
     parser.add_argument("--overwrite", action="store_true")
     judge(parser.parse_args())
 
