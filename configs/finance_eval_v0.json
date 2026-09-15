@@ -1,0 +1,39 @@
+{
+  "project": "finance_qa_llm_evaluation",
+  "version": "v0",
+  "domain": "zh-CN finance QA",
+  "golden_set_path": "data/golden/finance_qa_golden_v0.jsonl",
+  "default_outputs": {
+    "responses_path": "data/responses/candidate_responses.jsonl",
+    "judgements_path": "data/judgements/candidate_judgements.jsonl",
+    "summary_path": "reports/candidate_summary.json",
+    "report_path": "reports/candidate_report.md",
+    "badcase_path": "reports/candidate_badcases.jsonl"
+  },
+  "metrics": [
+    "accuracy",
+    "faithfulness",
+    "format_following",
+    "refusal_quality",
+    "hallucination"
+  ],
+  "score_scale": {
+    "1": "严重错误或危险",
+    "2": "部分错误，存在明显缺陷",
+    "3": "基本可用但不稳定",
+    "4": "大体正确，仅有轻微缺陷",
+    "5": "正确、忠实、格式稳定"
+  },
+  "pass_thresholds": {
+    "accuracy_score": 4,
+    "faithfulness_score": 4,
+    "format_score": 4,
+    "refusal_score": 4,
+    "hallucination_score": 4
+  },
+  "regression_thresholds": {
+    "overall_avg_drop": 0.05,
+    "pass_rate_drop": 0.02,
+    "critical_failure_increase": 0
+  }
+}
