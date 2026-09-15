@@ -9,3 +9,5 @@ data/judgements/*
 !data/judgements/.gitkeep
 reports/*
 !reports/.gitkeep
+
+data/raw_data/*

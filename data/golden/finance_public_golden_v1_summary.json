@@ -1,0 +1,26 @@
+{
+  "output": "/home/WangChanghui/wch/llm/llm-evaluation-framework/data/golden/finance_public_golden_v1.jsonl",
+  "total": 260,
+  "source_counts": {
+    "FinEval": 80,
+    "DISC-FinLLM": 60,
+    "CFBenchmark": 60,
+    "PIXIU": 60
+  },
+  "category_counts": {
+    "calculation": 21,
+    "classification": 53,
+    "concept_qa": 13,
+    "faithfulness_qa": 41,
+    "information_extraction": 25,
+    "knowledge_choice": 83,
+    "risk_disclosure": 20,
+    "summarization": 4
+  },
+  "risk_level_counts": {
+    "low": 216,
+    "medium": 44
+  },
+  "refusal_expected_count": 0,
+  "notes": "Public datasets converted into the project golden-set schema. Keep separate from manually curated smoke golden set."
+}

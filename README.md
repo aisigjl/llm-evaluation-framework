@@ -18,6 +18,7 @@ llm-evaluation-framework/
   docs/
     project_spec.md
     golden_set_design.md
+    public_datasets.md
     metrics.md
     judge_prompt.md
     bad_case_taxonomy.md
@@ -30,11 +31,15 @@ llm-evaluation-framework/
     regression_check.py
     analyze_badcases.py
     validate_golden.py
+    inspect_raw_data.py
+    build_public_golden.py
+    combine_golden_sets.py
 ```
 
 ## 第一版能力
 
 - golden set：`data/golden/finance_qa_golden_v0.jsonl`，30 条中文金融 QA 样本。
+- public dataset 调研：`docs/public_datasets.md`。
 - 指标：accuracy、faithfulness、format following、refusal quality、hallucination score。
 - LLM-as-judge：强模型输出结构化 JSON 评分和 bad case 标签。
 - 多模型对比：每个模型输出独立 responses/judgements/summary。
@@ -62,6 +67,38 @@ JUDGE_MODEL=gpt-4o
 ```
 
 `MODEL_*` 用于被评测模型，`JUDGE_*` 用于裁判模型。两者建议分开，避免自评。
+
+## 公开数据处理
+
+你当前放在 `data/raw_data/` 下的四个来源可以按以下方式处理：
+
+```bash
+python scripts/inspect_raw_data.py \
+  --raw-dir data/raw_data \
+  --output reports/raw_data_inventory.json
+
+python scripts/build_public_golden.py \
+  --raw-dir data/raw_data \
+  --output data/golden/finance_public_golden_v1.jsonl \
+  --summary-output data/golden/finance_public_golden_v1_summary.json \
+  --fineval-count 80 \
+  --disc-count 60 \
+  --cfbenchmark-count 60 \
+  --pixiu-count 60
+
+python scripts/combine_golden_sets.py \
+  --input data/golden/finance_qa_golden_v0.jsonl \
+  --input data/golden/finance_public_golden_v1.jsonl \
+  --output data/golden/finance_eval_golden_v1.jsonl \
+  --summary-output data/golden/finance_eval_golden_v1_summary.json
+
+python scripts/validate_golden.py \
+  --config configs/finance_eval_public_v1.json
+```
+
+当前已生成正式 v1 golden set：`data/golden/finance_eval_golden_v1.jsonl`，共 290 条，其中 30 条人工 smoke 样本、260 条公开数据转换样本。配置文件是 `configs/finance_eval_public_v1.json`。
+
+详细处理策略见 `docs/raw_data_processing_plan.md`。
 
 ## 运行流程
 
