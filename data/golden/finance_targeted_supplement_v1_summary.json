@@ -1,0 +1,18 @@
+{
+  "output": "/home/WangChanghui/wch/llm/llm-evaluation-framework/data/golden/finance_targeted_supplement_v1.jsonl",
+  "total": 150,
+  "category_counts": {
+    "calculation": 30,
+    "format_following": 20,
+    "hallucination_trap": 30,
+    "refusal": 40,
+    "risk_disclosure": 30
+  },
+  "risk_level_counts": {
+    "high": 55,
+    "low": 50,
+    "medium": 45
+  },
+  "refusal_expected_count": 70,
+  "source": "targeted_supplement_v1"
+}

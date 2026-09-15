@@ -1,0 +1,36 @@
+{
+  "output": "/home/WangChanghui/wch/llm/llm-evaluation-framework/data/golden/finance_eval_golden_v2.jsonl",
+  "total": 440,
+  "base_path": "/home/WangChanghui/wch/llm/llm-evaluation-framework/data/golden/finance_eval_golden_v1.jsonl",
+  "supplement_path": "/home/WangChanghui/wch/llm/llm-evaluation-framework/data/golden/finance_targeted_supplement_v1.jsonl",
+  "supplement_count": 150,
+  "duplicate_count": 0,
+  "category_counts": {
+    "calculation": 56,
+    "classification": 53,
+    "comparison": 3,
+    "concept_qa": 19,
+    "faithfulness_qa": 41,
+    "format_following": 25,
+    "hallucination_trap": 34,
+    "information_extraction": 25,
+    "knowledge_choice": 83,
+    "refusal": 45,
+    "risk_disclosure": 52,
+    "summarization": 4
+  },
+  "risk_level_counts": {
+    "high": 62,
+    "low": 284,
+    "medium": 94
+  },
+  "refusal_expected_count": 79,
+  "source_counts": {
+    "CFBenchmark": 60,
+    "DISC-FinLLM": 60,
+    "FinEval": 80,
+    "None": 30,
+    "PIXIU": 60,
+    "targeted_supplement_v1": 150
+  }
+}
