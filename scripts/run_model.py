@@ -2,12 +2,13 @@ from __future__ import annotations
 
 import argparse
 import os
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from typing import Any
 
 from tqdm import tqdm
 
-from utils import append_jsonl, chat_completion_text, existing_ids, load_config, make_openai_client, project_path, read_jsonl, utc_now
+from utils import append_jsonl, chat_completion_text, existing_ids, load_config, load_project_env, make_openai_client, project_path, read_jsonl, utc_now
 
 
 CANDIDATE_SYSTEM_PROMPT = """你是一个谨慎的中文金融问答助手。
@@ -24,6 +25,7 @@ def run(args: argparse.Namespace) -> Path:
     cfg = load_config(args.config)
     golden_path = args.golden_set or cfg["golden_set_path"]
     responses_path = args.responses_path or cfg["default_outputs"]["responses_path"]
+    load_project_env()
     model_name = args.model_name or os.getenv("MODEL_NAME")
     if not model_name:
         raise RuntimeError("Set --model-name or MODEL_NAME")
@@ -39,27 +41,40 @@ def run(args: argparse.Namespace) -> Path:
     pending = [sample for sample in samples if sample["id"] not in done]
 
     client = make_openai_client("MODEL_API_KEY", "MODEL_BASE_URL")
-    for sample in tqdm(pending, desc="generate"):
-        response = chat_completion_text(
-            client,
-            model=model_name,
-            messages=[
-                {"role": "system", "content": CANDIDATE_SYSTEM_PROMPT},
-                {"role": "user", "content": build_user_prompt(sample)},
-            ],
-            temperature=args.temperature,
-            max_tokens=args.max_tokens,
-        )
-        append_jsonl(
-            output,
-            {
-                **sample,
-                "model_name": model_name,
-                "model_response": response,
-                "generated_at": utc_now(),
-            },
-        )
-    print(f"responses={output} total={len(samples)} pending_written={len(pending)}")
+
+    def generate_one(sample: dict[str, Any]) -> dict[str, Any]:
+        response = ""
+        error = None
+        try:
+            response = chat_completion_text(
+                client,
+                model=model_name,
+                messages=[
+                    {"role": "system", "content": CANDIDATE_SYSTEM_PROMPT},
+                    {"role": "user", "content": build_user_prompt(sample)},
+                ],
+                temperature=args.temperature,
+                max_tokens=args.max_tokens,
+            )
+        except Exception as exc:
+            error = str(exc)
+        return {
+            **sample,
+            "model_name": model_name,
+            "model_response": response,
+            "generation_error": error,
+            "generated_at": utc_now(),
+        }
+
+    if args.workers <= 1:
+        for sample in tqdm(pending, desc="generate"):
+            append_jsonl(output, generate_one(sample))
+    else:
+        with ThreadPoolExecutor(max_workers=args.workers) as executor:
+            futures = [executor.submit(generate_one, sample) for sample in pending]
+            for future in tqdm(as_completed(futures), total=len(futures), desc=f"generate:{args.workers}w"):
+                append_jsonl(output, future.result())
+    print(f"responses={output} total={len(samples)} pending_written={len(pending)} workers={args.workers}")
     return output
 
 
@@ -72,6 +87,7 @@ def main() -> None:
     parser.add_argument("--limit", type=int)
     parser.add_argument("--temperature", type=float, default=0.0)
     parser.add_argument("--max-tokens", type=int, default=1024)
+    parser.add_argument("--workers", type=int, default=1)
     parser.add_argument("--overwrite", action="store_true")
     run(parser.parse_args())
 

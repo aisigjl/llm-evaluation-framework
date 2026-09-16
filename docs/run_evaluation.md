@@ -75,3 +75,37 @@ MODEL_NAME=gpt-4o python scripts/run_model.py \
 ```
 
 Then reuse the same judge and summarize commands with matching paths.
+
+## 6. One-command API Model Evaluation
+
+If `.env` already contains `MODEL_API_KEY`, `MODEL_BASE_URL`, `MODEL_NAME`, `JUDGE_API_KEY`, `JUDGE_BASE_URL`, and `JUDGE_MODEL`, run a small smoke test first:
+
+```bash
+cd /home/WangChanghui/wch/llm/llm-evaluation-framework
+
+LIMIT=20 \
+MODEL_WORKERS=4 \
+JUDGE_WORKERS=4 \
+MODEL_TAG=gpt4o_mini \
+./run_api_eval.sh
+```
+
+Then run the full 440-sample evaluation:
+
+```bash
+LIMIT=0 \
+MODEL_WORKERS=4 \
+JUDGE_WORKERS=4 \
+MODEL_TAG=gpt4o_mini \
+./run_api_eval.sh
+```
+
+`OVERWRITE=0` resumes from existing response and judgement files. Use `OVERWRITE=1` only when you intentionally want to regenerate and rejudge.
+
+After evaluating one or more API models, merge local and API summaries into one table:
+
+```bash
+./compare_all_models.sh
+```
+
+The merged table is written to `reports/all_model_comparison_v2.md`.
