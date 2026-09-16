@@ -4,13 +4,21 @@ set -euo pipefail
 PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "${PROJECT_DIR}"
 
+DISABLE_PROXY="${DISABLE_PROXY:-1}"
+if [[ "${DISABLE_PROXY}" == "1" ]]; then
+  unset http_proxy https_proxy all_proxy HTTP_PROXY HTTPS_PROXY ALL_PROXY
+fi
+
 CONFIG="${CONFIG:-configs/finance_eval_public_v2.json}"
 PYTHON_BIN="${PYTHON_BIN:-python}"
 MODEL_WORKERS="${MODEL_WORKERS:-4}"
 JUDGE_WORKERS="${JUDGE_WORKERS:-4}"
 JUDGE_MODEL="${JUDGE_MODEL:-gpt-4o}"
 LIMIT="${LIMIT:-0}"             # 0 means all rows
-OVERWRITE="${OVERWRITE:-0}"     # 1 deletes old response/judgement files; 0 resumes
+OVERWRITE="${OVERWRITE:-0}"     # backward-compatible: 1 overwrites both response and judgement
+RESPONSE_OVERWRITE="${RESPONSE_OVERWRITE:-${OVERWRITE}}"
+JUDGE_OVERWRITE="${JUDGE_OVERWRITE:-${OVERWRITE}}"
+RETRY_EMPTY="${RETRY_EMPTY:-0}" # 1 drops empty/error responses before generation
 MAX_TOKENS="${MAX_TOKENS:-1024}"
 JUDGE_MAX_TOKENS="${JUDGE_MAX_TOKENS:-1024}"
 
@@ -39,9 +47,19 @@ if [[ "${LIMIT}" != "0" ]]; then
   limit_args+=(--limit "${LIMIT}")
 fi
 
-overwrite_args=()
-if [[ "${OVERWRITE}" == "1" ]]; then
-  overwrite_args+=(--overwrite)
+response_overwrite_args=()
+if [[ "${RESPONSE_OVERWRITE}" == "1" ]]; then
+  response_overwrite_args+=(--overwrite)
+fi
+
+judge_overwrite_args=()
+if [[ "${JUDGE_OVERWRITE}" == "1" ]]; then
+  judge_overwrite_args+=(--overwrite)
+fi
+
+retry_empty_args=()
+if [[ "${RETRY_EMPTY}" == "1" ]]; then
+  retry_empty_args+=(--retry-empty)
 fi
 
 echo "[generate-api] model=${MODEL_NAME} tag=${MODEL_TAG} workers=${MODEL_WORKERS} limit=${LIMIT}"
@@ -52,7 +70,8 @@ echo "[generate-api] model=${MODEL_NAME} tag=${MODEL_TAG} workers=${MODEL_WORKER
   --max-tokens "${MAX_TOKENS}" \
   --workers "${MODEL_WORKERS}" \
   "${limit_args[@]}" \
-  "${overwrite_args[@]}"
+  "${retry_empty_args[@]}" \
+  "${response_overwrite_args[@]}"
 
 echo "[judge] candidate=${MODEL_TAG} judge=${JUDGE_MODEL} workers=${JUDGE_WORKERS}"
 "${PYTHON_BIN}" scripts/judge.py \
@@ -63,7 +82,7 @@ echo "[judge] candidate=${MODEL_TAG} judge=${JUDGE_MODEL} workers=${JUDGE_WORKER
   --max-tokens "${JUDGE_MAX_TOKENS}" \
   --workers "${JUDGE_WORKERS}" \
   "${limit_args[@]}" \
-  "${overwrite_args[@]}"
+  "${judge_overwrite_args[@]}"
 
 echo "[summary] candidate=${MODEL_TAG}"
 "${PYTHON_BIN}" scripts/summarize.py \

@@ -4,6 +4,11 @@ set -euo pipefail
 PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "${PROJECT_DIR}"
 
+DISABLE_PROXY="${DISABLE_PROXY:-1}"
+if [[ "${DISABLE_PROXY}" == "1" ]]; then
+  unset http_proxy https_proxy all_proxy HTTP_PROXY HTTPS_PROXY ALL_PROXY
+fi
+
 CONFIG="${CONFIG:-configs/finance_eval_public_v2.json}"
 JUDGE_MODEL="${JUDGE_MODEL:-gpt-4o}"
 JUDGE_WORKERS="${JUDGE_WORKERS:-4}"

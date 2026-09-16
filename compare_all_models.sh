@@ -11,6 +11,9 @@ OUTPUT_MD="${OUTPUT_MD:-reports/all_model_comparison_v2.md}"
 args=()
 for path in reports/*_v2_summary.json; do
   [[ -f "${path}" ]] || continue
+  if [[ "${path}" == *_api_v2_summary.json ]]; then
+    continue
+  fi
   name="$(basename "${path}" _v2_summary.json)"
   args+=(--summary "${name}=${path}")
 done

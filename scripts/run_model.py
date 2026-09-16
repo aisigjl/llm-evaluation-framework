@@ -21,6 +21,24 @@ def build_user_prompt(sample: dict[str, Any]) -> str:
     return str(sample["question"]).strip()
 
 
+def response_is_valid(row: dict[str, Any]) -> bool:
+    return not row.get("generation_error") and bool(str(row.get("model_response", "")).strip())
+
+
+def rewrite_valid_responses(path: Path) -> set[str]:
+    if not path.exists():
+        return set()
+    rows = read_jsonl(path)
+    valid_rows = [row for row in rows if response_is_valid(row)]
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("w", encoding="utf-8") as f:
+        import json
+
+        for row in valid_rows:
+            f.write(json.dumps(row, ensure_ascii=False) + "\n")
+    return {str(row.get("id")) for row in valid_rows if row.get("id")}
+
+
 def run(args: argparse.Namespace) -> Path:
     cfg = load_config(args.config)
     golden_path = args.golden_set or cfg["golden_set_path"]
@@ -37,7 +55,10 @@ def run(args: argparse.Namespace) -> Path:
     output = project_path(responses_path)
     if args.overwrite and output.exists():
         output.unlink()
-    done = set() if args.overwrite else existing_ids(output)
+    if args.retry_empty and not args.overwrite:
+        done = rewrite_valid_responses(output)
+    else:
+        done = set() if args.overwrite else existing_ids(output)
     pending = [sample for sample in samples if sample["id"] not in done]
 
     client = make_openai_client("MODEL_API_KEY", "MODEL_BASE_URL")
@@ -88,6 +109,7 @@ def main() -> None:
     parser.add_argument("--temperature", type=float, default=0.0)
     parser.add_argument("--max-tokens", type=int, default=1024)
     parser.add_argument("--workers", type=int, default=1)
+    parser.add_argument("--retry-empty", action="store_true", help="Drop empty/error rows from an existing responses file and regenerate them.")
     parser.add_argument("--overwrite", action="store_true")
     run(parser.parse_args())
 

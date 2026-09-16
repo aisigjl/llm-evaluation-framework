@@ -25,7 +25,7 @@ v2 评测集关键分布：
 
 ## 3. 被评测模型
 
-本次先评测 4 个本地开源模型：
+本次先评测 4 个本地开源模型，并在后续补充 2 个闭源/API 模型：
 
 | Model | Path |
 |---|---|
@@ -101,7 +101,27 @@ Qwen3-4B-Instruct 在综合通过率、准确性、忠实性、拒答质量和�
 本轮评测证明了三点：
 
 1. 同一套 golden set 和 judge rubric 能稳定拉开模型差异，尤其是安全边界和幻觉控制差异。
-2. Qwen3-4B-Instruct 是当前本地开源模型中的最佳候选，适合作为后续 API 模型横向对比或领域增强 baseline。
+2. Qwen3-4B-Instruct 是当前本地开源模型中的最佳候选；Gemini-2.5-Flash API 是加入闭源/API 模型后的最佳候选。
 3. LLM-as-judge 不是绝对真值，但结合 reference answer、evidence、must_include、must_not_include 和 bad case taxonomy，可以形成可解释、可复核的评测链路。
 
-下一阶段可以继续评测闭源 API 模型，并把结果加入 `reports/local_model_comparison_v2.md` 或生成新的 `api_model_comparison_v2.md`。如果后续有训练前后模型，也可以用同一套 `finance_eval_golden_v2.jsonl` 做 regression check。
+加入闭源/API 模型后，当前评测已经覆盖本地开源模型和外部 API 模型。后续如果有训练前后模型，可以继续用同一套 `finance_eval_golden_v2.jsonl` 做 regression check。
+
+## 10. 闭源 API 模型补充结果
+
+在本地开源模型评测之后，进一步加入两个闭源/API 模型：Gemini-2.5-Flash API 和 DeepSeek Flash API。两者使用同一份 `finance_eval_golden_v2.jsonl`、同一套候选回答生成流程、同一 judge prompt 和同一 summarization 脚本。
+
+| Model | Pass Rate | Accuracy | Faithfulness | Format | Refusal | Hallucination | Critical Failures |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| Gemini-2.5-Flash API | 79.55% | 4.4273 | 4.3682 | 4.8114 | 4.8568 | 4.7545 | 10 |
+| Qwen3-4B-Instruct | 69.77% | 4.1386 | 4.0455 | 4.7023 | 4.7659 | 4.4750 | 35 |
+| Llama-3.1-8B-Instruct | 48.18% | 3.5068 | 3.4182 | 4.7295 | 4.6068 | 4.3909 | 50 |
+| DeepSeek Flash API | 84.55% | 3.0591 | 3.0136 | 3.3341 | 3.4023 | 3.3727 | 10 |
+| Mistral-7B-Instruct-v0.3 | 33.86% | 3.0795 | 2.9614 | 4.6636 | 4.3500 | 3.9955 | 85 |
+| Llama-2-7B-Chat | 17.95% | 2.5636 | 2.3614 | 3.6818 | 3.9159 | 3.4364 | 111 |
+
+Gemini-2.5-Flash API 是当前最强模型，通过率达到 79.55%，critical failure 只有 10 个，拒答通过率为 74/79。它在准确性、忠实性、拒答质量和幻觉控制上都超过本地开源模型。
+
+DeepSeek Flash API 的结果需要单独解释：本轮评测中该 API 返回了大量空回答，空回答被系统按自动失败处理。因此它的最终分数同时反映了回答质量和接口/模型响应稳定性。这个结果对评测系统本身是有价值的，因为真实评测不应只统计模型给出内容时的质量，也应记录 API 空响应、格式异常、解析失败等工程稳定性问题。
+
+加入闭源模型后，项目结论从“本地模型横向对比”扩展为“本地开源模型 vs 闭源/API 模型对比”。这更接近真实模型选型场景：不仅要看模型能力，还要看安全边界、幻觉率、拒答质量、API 稳定性和 bad case 类型。
+

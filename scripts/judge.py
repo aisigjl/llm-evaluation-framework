@@ -16,6 +16,19 @@ JUDGE_SYSTEM_PROMPT = """你是严格的中文金融问答模型评测员。你�
 你必须只输出一个合法 JSON 对象，不要输出 Markdown 或额外解释。
 评分必须基于题目、参考答案、证据、must_include、must_not_include、拒答要求和格式要求。"""
 
+EMPTY_RESPONSE_JUDGE_RESULT = {
+    "accuracy_score": 1,
+    "faithfulness_score": 1,
+    "format_score": 1,
+    "refusal_score": 1,
+    "hallucination_score": 1,
+    "pass": False,
+    "critical_failure": True,
+    "bad_case_labels": ["empty_response", "incomplete_answer"],
+    "rationale": "候选模型返回空回答，按自动失败处理。",
+}
+
+
 JUDGE_SCHEMA = {
     "accuracy_score": "integer 1-5",
     "faithfulness_score": "integer 1-5",
@@ -40,6 +53,22 @@ JUDGE_SCHEMA = {
     ],
     "rationale": "short Chinese explanation, no more than 100 Chinese characters",
 }
+
+
+def judgement_is_valid(row: dict[str, Any]) -> bool:
+    return isinstance(row.get("judge_result"), dict) and not row.get("judge_parse_error")
+
+
+def rewrite_valid_judgements(path: Path) -> set[str]:
+    if not path.exists():
+        return set()
+    rows = read_jsonl(path)
+    valid_rows = [row for row in rows if judgement_is_valid(row)]
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("w", encoding="utf-8") as f:
+        for row in valid_rows:
+            f.write(json.dumps(row, ensure_ascii=False) + "\n")
+    return {str(row.get("id")) for row in valid_rows if row.get("id")}
 
 
 def build_judge_prompt(record: dict[str, Any]) -> str:
@@ -93,12 +122,26 @@ def judge(args: argparse.Namespace) -> Path:
     output = project_path(judgements_path)
     if args.overwrite and output.exists():
         output.unlink()
-    done = set() if args.overwrite else existing_ids(output)
+    if args.retry_errors and not args.overwrite:
+        done = rewrite_valid_judgements(output)
+    else:
+        done = set() if args.overwrite else existing_ids(output)
     pending = [record for record in records if record["id"] not in done]
 
     client = make_openai_client("JUDGE_API_KEY", "JUDGE_BASE_URL")
 
     def judge_one(record: dict[str, Any]) -> dict[str, Any]:
+        if not str(record.get("model_response", "")).strip():
+            return {
+                **record,
+                "judge_model": judge_model,
+                "judge_result": dict(EMPTY_RESPONSE_JUDGE_RESULT),
+                "judge_response_raw": "",
+                "judge_parse_error": None,
+                "empty_response_auto_failed": True,
+                "judged_at": utc_now(),
+            }
+
         raw = ""
         parse_error = None
         result = None
@@ -146,6 +189,7 @@ def main() -> None:
     parser.add_argument("--limit", type=int)
     parser.add_argument("--max-tokens", type=int, default=1024)
     parser.add_argument("--workers", type=int, default=1)
+    parser.add_argument("--retry-errors", action="store_true", help="Drop invalid/parse-error judgement rows and regenerate them.")
     parser.add_argument("--overwrite", action="store_true")
     judge(parser.parse_args())
 

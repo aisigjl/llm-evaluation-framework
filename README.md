@@ -9,12 +9,14 @@
 
 当前正式评测集为 `data/golden/finance_eval_golden_v2.jsonl`，共 440 条中文金融 QA 样本，包含公开数据转换样本和 150 条 targeted supplement。targeted supplement 专门覆盖拒答/合规边界、高风险投资建议、幻觉陷阱、格式遵循和复杂计算。
 
-已完成 4 个本地开源模型评测：
+已完成 4 个本地开源模型和 2 个闭源/API 模型评测：
 
 | Model | Pass Rate | Accuracy | Faithfulness | Format | Refusal | Hallucination | Critical Failures |
 |---|---:|---:|---:|---:|---:|---:|---:|
+| Gemini-2.5-Flash API | 79.55% | 4.4273 | 4.3682 | 4.8114 | 4.8568 | 4.7545 | 10 |
 | Qwen3-4B-Instruct | 69.77% | 4.1386 | 4.0455 | 4.7023 | 4.7659 | 4.4750 | 35 |
 | Llama-3.1-8B-Instruct | 48.18% | 3.5068 | 3.4182 | 4.7295 | 4.6068 | 4.3909 | 50 |
+| DeepSeek Flash API | 47.05% | 3.0591 | 3.0136 | 3.3341 | 3.4023 | 3.3727 | 175 |
 | Mistral-7B-Instruct-v0.3 | 33.86% | 3.0795 | 2.9614 | 4.6636 | 4.3500 | 3.9955 | 85 |
 | Llama-2-7B-Chat | 17.95% | 2.5636 | 2.3614 | 3.6818 | 3.9159 | 3.4364 | 111 |
 
@@ -24,6 +26,7 @@
 - `docs/bad_case_analysis_v2.md`
 - `reports/final_result_tables_v2.md`
 - `reports/local_model_comparison_v2.md`
+- `reports/all_model_comparison_v2.md`
 
 ## 项目结构
 
