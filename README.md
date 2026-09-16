@@ -28,6 +28,16 @@
 - `reports/local_model_comparison_v2.md`
 - `reports/all_model_comparison_v2.md`
 
+
+## 项目包装材料
+
+- `PROJECT_FINAL_REPORT.md`：最终项目报告，适合作为作品集入口。
+- `docs/resume_summary.md`：简历项目描述，可直接改写到简历。
+- `docs/interview_talking_points.md`：面试讲解稿，包含一分钟讲法、设计选择和局限性。
+- `docs/reproducibility.md`：复现实验步骤。
+- `docs/evaluation_report_v2.md`：正式评测报告。
+- `docs/bad_case_analysis_v2.md`：典型 bad case 分析。
+
 ## 项目结构
 
 ```text
@@ -52,6 +62,9 @@ llm-evaluation-framework/
     bad_case_taxonomy.md
     evaluation_report_v2.md
     bad_case_analysis_v2.md
+    resume_summary.md
+    interview_talking_points.md
+    reproducibility.md
     run_evaluation.md
   reports/
   scripts/

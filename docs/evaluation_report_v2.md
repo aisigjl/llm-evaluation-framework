@@ -25,16 +25,18 @@ v2 评测集关键分布：
 
 ## 3. 被评测模型
 
-本次先评测 4 个本地开源模型，并在后续补充 2 个闭源/API 模型：
+本次评测 4 个本地开源模型，并补充 2 个闭源/API 模型。
 
-| Model | Path |
-|---|---|
-| Qwen3-4B-Instruct | `/home/WangChanghui/wch/model/Qwen3-4B-Instruct-2507` |
-| Llama-3.1-8B-Instruct | `/home/WangChanghui/wch/model/Llama-3.1-8B-Instruct` |
-| Mistral-7B-Instruct-v0.3 | `/home/WangChanghui/wch/model/Mistral-7B-Instruct-v0.3` |
-| Llama-2-7B-Chat | `/home/WangChanghui/wch/model/Llama-2-7B-chat-hf` |
+| Model | Type | Source |
+|---|---|---|
+| Qwen3-4B-Instruct | Local open-source | `/home/WangChanghui/wch/model/Qwen3-4B-Instruct-2507` |
+| Llama-3.1-8B-Instruct | Local open-source | `/home/WangChanghui/wch/model/Llama-3.1-8B-Instruct` |
+| Mistral-7B-Instruct-v0.3 | Local open-source | `/home/WangChanghui/wch/model/Mistral-7B-Instruct-v0.3` |
+| Llama-2-7B-Chat | Local open-source | `/home/WangChanghui/wch/model/Llama-2-7B-chat-hf` |
+| Gemini-2.5-Flash API | Closed/API | OpenAI-compatible API |
+| DeepSeek Flash API | Closed/API | OpenAI-compatible API |
 
-生成阶段使用同一 system prompt、同一 golden set 和同一批量生成脚本 `scripts/run_local_hf_model.py`。四个模型均完成 440/440 条生成，`generation_error=0`，空回答数为 0。
+生成阶段使用同一 system prompt 和同一 golden set。本地模型通过 `scripts/run_local_hf_model.py` 批量生成，API 模型通过 `scripts/run_model.py` 并发生成。四个本地模型均完成 440/440 条生成，`generation_error=0`，空回答数为 0；Gemini-2.5-Flash API 完整返回 440/440，DeepSeek Flash API 出现大量空响应，评测系统将空响应按自动失败计入。
 
 ## 4. 评测方法
 
